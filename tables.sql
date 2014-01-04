@@ -251,7 +251,7 @@ ON DELETE NO ACTION ON UPDATE NO ACTION NOT DEFERRABLE;
 DROP FUNCTION IF EXISTS ouvrir_compte_particulier();
 CREATE FUNCTION ouvrir_compte_particulier() RETURNS TRIGGER AS $_$
        BEGIN
-       INSERT INTO compte ("IBAN", OLD.solde) VALUES
+       INSERT INTO compte ("IBAN", solde, "BIC_banque" ) VALUES (OLD."IBAN" OLD.solde, OLD."BIC_Banque")
        RETURN OLD;
 END $_$ LANGUAGE 'plpgsql';
 

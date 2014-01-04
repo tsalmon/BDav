@@ -247,7 +247,7 @@ ON DELETE NO ACTION ON UPDATE NO ACTION NOT DEFERRABLE;
 -- ddl-end --
 
 
-
+/*
 DROP FUNCTION IF EXISTS ouvrir_compte_particulier();
 CREATE FUNCTION ouvrir_compte_particulier() RETURNS TRIGGER AS $_$
        BEGIN
@@ -258,3 +258,5 @@ END $_$ LANGUAGE 'plpgsql';
 CREATE TRIGGER trigger_ouvrir_compte BEFORE INSERT ON compte_particulier 
 FOR EACH ROW 
     EXECUTE PROCEDURE ouvrir_compte_particulier();
+
+*/

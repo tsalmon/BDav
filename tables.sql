@@ -16,23 +16,24 @@ SET check_function_bodies = false;
 -- 
 
 -- object: public.client | type: TABLE --
+DROP TABLE IF EXISTS public.client CASCADE; -- if already exist
 CREATE TABLE public.client(
 	id_client varchar NOT NULL DEFAULT 0,
 	nom smallint,
 	CONSTRAINT client_pk PRIMARY KEY (id_client)
-
 );
 -- ddl-end --
 -- object: public.compte | type: TABLE --
+DROP TABLE IF EXISTS public.compte CASCADE; -- if already exist
 CREATE TABLE public.compte(
 	"IBAN" varchar NOT NULL,
 	solde smallint,
 	"BIC_banque" varchar NOT NULL,
 	CONSTRAINT compte_pk PRIMARY KEY ("IBAN")
-
 );
 -- ddl-end --
 -- object: public.particulier | type: TABLE --
+DROP TABLE IF EXISTS public.particulier CASCADE; -- if already exist
 CREATE TABLE public.particulier(
 	age smallint,
 	CONSTRAINT particulier_pk PRIMARY KEY (id_client)
@@ -41,14 +42,17 @@ CREATE TABLE public.particulier(
 ;
 -- ddl-end --
 -- object: public.organisation | type: TABLE --
+DROP TABLE IF EXISTS public.organisation CASCADE; -- if already exist
 CREATE TABLE public.organisation(
-,
+       	id_client varchar NOT NULL,
+	nom smallint,
 	CONSTRAINT organisation_pk PRIMARY KEY (id_client)
 
 ) INHERITS(public.client)
 ;
 -- ddl-end --
 -- object: public.virement | type: TABLE --
+DROP TABLE IF EXISTS public.virement CASCADE; -- if already exist
 CREATE TABLE public.virement(
 	num_transaction smallint NOT NULL,
 	beneficiaire varchar NOT NULL,
@@ -59,6 +63,7 @@ CREATE TABLE public.virement(
 );
 -- ddl-end --
 -- object: public.carte | type: TABLE --
+DROP TABLE IF EXISTS public.carte CASCADE; -- if already exist
 CREATE TABLE public.carte(
 	num_carte integer,
 	"IBAN_compte" varchar NOT NULL,
@@ -74,6 +79,7 @@ ON DELETE RESTRICT ON UPDATE CASCADE NOT DEFERRABLE;
 
 
 -- object: public.banque | type: TABLE --
+DROP TABLE IF EXISTS public.banque CASCADE; -- if already exist
 CREATE TABLE public.banque(
 	"BIC" varchar NOT NULL,
 	taux_interet smallint,
@@ -94,6 +100,7 @@ ON DELETE RESTRICT ON UPDATE CASCADE NOT DEFERRABLE;
 
 
 -- object: public."Date" | type: TABLE --
+DROP TABLE IF EXISTS public."Date" CASCADE; -- if already exist
 CREATE TABLE public."Date"(
 	date date NOT NULL,
 	CONSTRAINT date_fk PRIMARY KEY (date)
@@ -101,6 +108,7 @@ CREATE TABLE public."Date"(
 );
 -- ddl-end --
 -- object: public.procuration | type: TABLE --
+DROP TABLE IF EXISTS public.procuration CASCADE; -- if already exist
 CREATE TABLE public.procuration(
 	date_debut date,
 	"IBAN_compte_particulier" varchar,
@@ -111,6 +119,7 @@ CREATE TABLE public.procuration(
 );
 -- ddl-end --
 -- object: public.t_interdit_bancaire | type: TABLE --
+DROP TABLE IF EXISTS public.t_interdit_bancaire CASCADE; -- if already exist
 CREATE TABLE public.t_interdit_bancaire(
 	id_client_client varchar DEFAULT 0,
 	"BIC_banque" varchar NOT NULL,
@@ -122,6 +131,7 @@ CREATE TABLE public.t_interdit_bancaire(
 );
 -- ddl-end --
 -- object: public.decouvert | type: TABLE --
+DROP TABLE IF EXISTS public.decouvert CASCADE; -- if already exist
 CREATE TABLE public.decouvert(
 	id_banque varchar,
 	"IBAN_compte" varchar,
@@ -130,6 +140,7 @@ CREATE TABLE public.decouvert(
 );
 -- ddl-end --
 -- object: public.virement_permanent | type: TABLE --
+DROP TABLE IF EXISTS public.virement_permanent CASCADE; -- if already exist
 CREATE TABLE public.virement_permanent(
 	date date,
 	frequence smallint,
@@ -139,6 +150,7 @@ CREATE TABLE public.virement_permanent(
 ;
 -- ddl-end --
 -- object: public.compte_particulier | type: TABLE --
+DROP TABLE IF EXISTS public.compte_particulier CASCADE; -- if already exist
 CREATE TABLE public.compte_particulier(
 	id_client_particulier varchar NOT NULL DEFAULT 0,
 	CONSTRAINT compte_particulier_pk PRIMARY KEY ("IBAN")
@@ -147,6 +159,7 @@ CREATE TABLE public.compte_particulier(
 ;
 -- ddl-end --
 -- object: public.compte_pro | type: TABLE --
+DROP TABLE IF EXISTS public.compte_pro CASCADE; -- if already exist
 CREATE TABLE public.compte_pro(
 	id_client_organisation varchar NOT NULL DEFAULT 0,
 	CONSTRAINT compte_pro_pk PRIMARY KEY ("IBAN")
@@ -235,3 +248,13 @@ ON DELETE NO ACTION ON UPDATE NO ACTION NOT DEFERRABLE;
 
 
 
+DROP FUNCTION IF EXISTS ouvrir_compte_particulier();
+CREATE FUNCTION ouvrir_compte_particulier() RETURNS TRIGGER AS $_$
+       BEGIN
+       INSERT INTO compte ("IBAN", OLD.solde) VALUES
+       RETURN OLD;
+END $_$ LANGUAGE 'plpgsql';
+
+CREATE TRIGGER trigger_ouvrir_compte BEFORE INSERT ON compte_particulier 
+FOR EACH ROW 
+    EXECUTE PROCEDURE ouvrir_compte_particulier();

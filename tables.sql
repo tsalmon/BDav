@@ -16,10 +16,10 @@ SET check_function_bodies = false;
 -- 
 
 -- object: public.client | type: TABLE --
-DROP TABLE IF EXISTS public.client CASCADE; -- if already exist
-CREATE TABLE public.client(
+DROP TABLE IF EXISTS public.compte CASCADE; -- if already exist
+CREATE TABLE public.compte(
 	id_client varchar NOT NULL DEFAULT 0,
-	nom smallint,
+	nom varchar,
 	CONSTRAINT client_pk PRIMARY KEY (id_client)
 );
 -- ddl-end --
@@ -27,7 +27,7 @@ CREATE TABLE public.client(
 DROP TABLE IF EXISTS public.compte CASCADE; -- if already exist
 CREATE TABLE public.compte(
 	"IBAN" varchar NOT NULL,
-	solde smallint,
+	solde float,
 	"BIC_banque" varchar NOT NULL,
 	CONSTRAINT compte_pk PRIMARY KEY ("IBAN")
 );
@@ -36,6 +36,7 @@ CREATE TABLE public.compte(
 DROP TABLE IF EXISTS public.particulier CASCADE; -- if already exist
 CREATE TABLE public.particulier(
 	age smallint,
+	--nom varchar,
 	CONSTRAINT particulier_pk PRIMARY KEY (id_client)
 
 ) INHERITS(public.client)
@@ -45,7 +46,7 @@ CREATE TABLE public.particulier(
 DROP TABLE IF EXISTS public.organisation CASCADE; -- if already exist
 CREATE TABLE public.organisation(
        	id_client varchar NOT NULL,
-	nom smallint,
+	nom varchar,
 	CONSTRAINT organisation_pk PRIMARY KEY (id_client)
 
 ) INHERITS(public.client)
@@ -54,7 +55,7 @@ CREATE TABLE public.organisation(
 -- object: public.virement | type: TABLE --
 DROP TABLE IF EXISTS public.virement CASCADE; -- if already exist
 CREATE TABLE public.virement(
-	num_transaction smallint NOT NULL,
+	num_transaction serial NOT NULL,
 	beneficiaire varchar NOT NULL,
 	emeteur varchar NOT NULL,
 	montant smallint,
@@ -82,7 +83,7 @@ ON DELETE RESTRICT ON UPDATE CASCADE NOT DEFERRABLE;
 DROP TABLE IF EXISTS public.banque CASCADE; -- if already exist
 CREATE TABLE public.banque(
 	"BIC" varchar NOT NULL,
-	taux_interet smallint,
+	taux_interet float,
 	taux_decouvert smallint,
 	nom_banque varchar,
 	prix_virement smallint,
@@ -102,9 +103,8 @@ ON DELETE RESTRICT ON UPDATE CASCADE NOT DEFERRABLE;
 -- object: public."Date" | type: TABLE --
 DROP TABLE IF EXISTS public."Date" CASCADE; -- if already exist
 CREATE TABLE public."Date"(
-	date date NOT NULL,
-	CONSTRAINT date_fk PRIMARY KEY (date)
-
+	id serial,	
+	date_actuelle date NOT NULL	
 );
 -- ddl-end --
 -- object: public.procuration | type: TABLE --
@@ -142,7 +142,7 @@ CREATE TABLE public.decouvert(
 -- object: public.virement_permanent | type: TABLE --
 DROP TABLE IF EXISTS public.virement_permanent CASCADE; -- if already exist
 CREATE TABLE public.virement_permanent(
-	date date,
+	"date" date,
 	frequence smallint,
 	CONSTRAINT virement_permanent_pk PRIMARY KEY (num_transaction)
 
@@ -234,29 +234,37 @@ ON DELETE RESTRICT ON UPDATE CASCADE NOT DEFERRABLE;
 
 
 -- object: transaction_emmeteur_fk | type: CONSTRAINT --
-ALTER TABLE public.virement ADD CONSTRAINT transaction_emmeteur_fk FOREIGN KEY (emeteur)
-REFERENCES public.compte ("IBAN") MATCH FULL
-ON DELETE NO ACTION ON UPDATE NO ACTION NOT DEFERRABLE;
+--ALTER TABLE public.virement ADD CONSTRAINT transaction_emmeteur_fk FOREIGN KEY (emeteur)
+--REFERENCES public.compte ("IBAN") MATCH FULL
+--ON DELETE NO ACTION ON UPDATE NO ACTION NOT DEFERRABLE;
 -- ddl-end --
 
 
 -- object: transaction_beneficiaire_varchar | type: CONSTRAINT --
-ALTER TABLE public.virement ADD CONSTRAINT transaction_beneficiaire_varchar FOREIGN KEY (beneficiaire)
-REFERENCES public.compte ("IBAN") MATCH FULL
-ON DELETE NO ACTION ON UPDATE NO ACTION NOT DEFERRABLE;
+--ALTER TABLE public.virement ADD CONSTRAINT transaction_beneficiaire_varchar FOREIGN KEY (beneficiaire)
+--REFERENCES public.compte ("IBAN") MATCH FULL
+--ON DELETE NO ACTION ON UPDATE NO ACTION NOT DEFERRABLE;
 -- ddl-end --
 
+ALTER TABLE public.compte_pro ADD CONSTRAINT compte_pro_fk FOREIGN KEY ("BIC_banque")
+REFERENCES public.banque ("BIC") MATCH FULL
+ON DELETE RESTRICT ON UPDATE CASCADE NOT DEFERRABLE;
 
-/*
-DROP FUNCTION IF EXISTS ouvrir_compte_particulier();
-CREATE FUNCTION ouvrir_compte_particulier() RETURNS TRIGGER AS $_$
-       BEGIN
-       INSERT INTO compte ("IBAN", solde, "BIC_banque" ) VALUES (OLD."IBAN" OLD.solde, OLD."BIC_Banque")
-       RETURN OLD;
-END $_$ LANGUAGE 'plpgsql';
+ALTER TABLE public.compte_particulier ADD CONSTRAINT compte_particulier_fk FOREIGN KEY ("BIC_banque")
+REFERENCES public.banque ("BIC") MATCH FULL
+ON DELETE RESTRICT ON UPDATE CASCADE NOT DEFERRABLE;
 
-CREATE TRIGGER trigger_ouvrir_compte BEFORE INSERT ON compte_particulier 
-FOR EACH ROW 
-    EXECUTE PROCEDURE ouvrir_compte_particulier();
+--tests
 
-*/
+INSERT INTO "Date" (date_actuelle) VALUES (NOW());
+
+INSERT INTO banque ("BIC", taux_interet, taux_decouvert, nom_banque, prix_virement, prix_virement_permanent, prix_virement_mensuel) VALUES ('0', 0.01, 10000, 10000, 10000, 10000, 10000), ('1', 0.01, 10000, 10000, 10000, 10000, 10000), ('10', 0.01, 10000, 10000, 10000, 10000, 10000);
+
+INSERT INTO particulier (id_client, nom ,age) VALUES ('0','a', 1), ('1', 'b', 2), ('2', 'c', 3);
+INSERT INTO compte_particulier("IBAN", solde, "BIC_banque", id_client_particulier) 
+VALUES ('0', 1000.5, '1', '0'), ('1', 10000.10, '0', '0'), -- a
+       ('2', 400.2, '10', '1'); -- b
+
+INSERT INTO organisation (id_client, nom) VALUES ('3', 'A'), ('4', 'B'), ('5', 'C');
+INSERT INTO compte_pro("IBAN", solde, "BIC_banque", id_client_organisation) 
+VALUES ('3', 1000.0, '0', '3'); -- A
